@@ -4,6 +4,8 @@
 # And then summarize the file (classes, methods, variables, etc)
 
 class ParsedFile():
+    keywords = ["if", "elif", "else", "for", "while"]
+    
     def __init__(self, filename):
         self.filename = filename
         self.internal_classes = []
@@ -11,6 +13,9 @@ class ParsedFile():
         self.methods = []
         self.external_classes = []
         self.modules = []
+        
+        # Keep track of where we are in the parsing
+        self.current = None
         
     def parse_file(self):
         # Open file and read data into list
@@ -27,26 +32,56 @@ class ParsedFile():
         for line in file_data:
             line.strip()
             
+            # Ignore comments
+            if line.find("#") > -1:
+                continue
+            
             # Check for modules
-            if line.find("import") != -1:
+            if line.find("import ") != -1:
                 tokens = line.split(" ")[1]
                 tokens = tokens.split(",")
                 for token in tokens:
-                    self.add_module(token.strip())
+                    if token != "":
+                        self.add_module(token.strip())
+                self.current = None
             
-            # Check for functions
-            elif line.find("def") == 0:
-                token = line.split(" ")[1]
-                self.add_method(token.strip())
+            # Check for methods
+            elif line.find("def ") != -1:
+                line = line.strip()
+                # print("\n\nLine: " + line + "\n\n")
+                token = line.split(" ",1)[1]
+                if self.current == "class":
+                    self.add_internal_class("    " + token.strip(), "", "")
+                else:
+                    self.add_method(token.strip()[0:-1])
+                
+            elif line.find("return ") != -1 and self.current == "def":
+                self.add_method(line.strip())
+                self.current = None
             
             # Check for internal classes
-            elif line.find("class") != -1:
+            elif line.find("class ") != -1:
                 tokens = line.split(" ")[1]
                 tokens = tokens.split("(");
                 class_name = tokens[0]
-                parent = tokens[1][0:-3]
+                try:
+                    parent = tokens[1][0:-3]
+                except:
+                    parent = "NO PARENT FOUND"
                 init = "NOT IMPLEMENTED"
                 self.add_internal_class(class_name, parent, init)
+                self.current = "class"
+                
+            else: 
+                keyword_found = False
+                for keyword in ParsedFile.keywords:
+                    if line.find(keyword) != -1:
+                        keyword_found = True
+                
+                if not keyword_found and line.find("=") != -1 and self.current == None and line[0]!=" " and line[0]!="\t":
+                    variable = line.strip().split("=")[0].split(" ")[0].strip()
+                    if  variable !="" and variable not in self.variables:
+                        self.add_variable(variable)
                 
     def add_internal_class(self, name, parent, init):
         self.internal_classes.append(name + " " + parent + " " + init)
@@ -72,37 +107,46 @@ class ParsedFile():
         # Print modules
         print("\nModules:")
         for module in self.modules:
-            print(module)
+            print(f"    {module}")
             
         # Print variables
-        print("\nVariables:")
+        print("\nGloblal Variables:")
         for variable in self.variables:
-            print(variable)
+            print(f"    {variable}")
         
         # Print methods
         print("\nMethods:")
         for method in self.methods:
-            print(method)
+            print(f"    {method}")
             
         # Print classes
         print("\nInternal Classes:")
         for internal_class in self.internal_classes:
-            print(internal_class)
+            print(f"    {internal_class}")
             
         # Print external classes
         print("\nExternal Classes:")
         for external_class in self.external_classes:
-            print(external_class)
+            print(f"    {external_class}")
             
-            
+
+# Clear screen
+import os
+os.system("clear")
+
 # Choose filename
-filename = "spgl.py"
+files = os.listdir()
 
-# Create ParsedFile Object
-parsed_file = ParsedFile(filename)
+for filename in files:
+    if filename.find(".py") != -1:
+    
+        # Create ParsedFile Object
+        parsed_file = ParsedFile(filename)
 
-# Parse the file
-parsed_file.parse_file();
+        # Parse the file
+        parsed_file.parse_file();
 
-# Print file info
-parsed_file.print_info();
+        # Print file info
+        parsed_file.print_info();
+        
+    print("\n\n")
