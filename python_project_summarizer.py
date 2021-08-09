@@ -42,21 +42,16 @@ class ParsedFile():
             # Check for internal classes
             elif line.find("class") != -1:
                 tokens = line.split(" ")[1]
-                tokens = split("(");
+                tokens = tokens.split("(");
                 class_name = tokens[0]
-                parent = tokens[0][0:-2]
+                parent = tokens[1][0:-3]
                 init = "NOT IMPLEMENTED"
                 self.add_internal_class(class_name, parent, init)
                 
-            
-            
-
-        
-        
     def add_internal_class(self, name, parent, init):
-        self.internal_classes.append(name + " " + parent + "init")
+        self.internal_classes.append(name + " " + parent + " " + init)
         # Add parent to external class list
-        if parent not in self.internal_classes and parent != "":
+        if parent not in self.internal_classes and parent not in self.external_classes and parent != "":
             self.external_classes.append(parent)
     
     def add_variable(self, variable):
@@ -101,7 +96,7 @@ class ParsedFile():
             
             
 # Choose filename
-filename = "Blackjack.py"
+filename = "spgl.py"
 
 # Create ParsedFile Object
 parsed_file = ParsedFile(filename)
